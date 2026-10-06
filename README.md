@@ -86,4 +86,9 @@ SELECT COUNT(*) FROM tasks;
 UPDATE tasks SET done = 1;
 DELETE FROM tasks WHERE done = 1;
 ```
+
+## Swagger UI
+
+![Swagger UI screenshot](./task2.png)
+
 Changes made directly in the database show up immediately in the API.
