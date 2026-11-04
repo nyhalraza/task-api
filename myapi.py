@@ -1,73 +1,73 @@
 from fastapi import FastAPI, Path, HTTPException, Response
 from typing import Optional
 from pydantic import BaseModel
+import storage
 
+storage.init_db()
 app = FastAPI()
 
-tasks = {
-    1: {"title": "Make Notes", "done": False},
-    2: {"title": "Prepare Quiz", "done": False},
-    3: {"title": "Complete Assignment", "done": True}
-}
 
 class Task(BaseModel):
     title: str
     done: bool = False
 
+
 class UpdateTask(BaseModel):
     title: Optional[str] = None
     done: Optional[bool] = None
-    
+
 
 @app.get("/")
 def index():
     return {
         "name": "Task API",
-        "version": "1.0",
+        "version": "2.0",
+        "storage": "SQLite",
         "endpoints": ["/tasks", "/tasks/{id}"]
     }
+
 
 @app.get("/health")
 def health():
     return {"status": "ok"}
 
+
 @app.get("/tasks")
 def get_all_tasks():
-    return tasks
+    return storage.list_tasks()
+
 
 @app.get("/tasks/{task_id}")
 def get_task_by_id(task_id: int = Path(..., gt=0, description="Task ID")):
-    if task_id not in tasks:
+    task = storage.get_task(task_id)
+    if task is None:
         raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
-    return tasks[task_id]
-
+    return task
 
 
 @app.post("/tasks", status_code=201)
 def create_task(task: Task):
-    if not task.title.strip():
+    title = task.title.strip()
+    if not title:
         raise HTTPException(status_code=400, detail="Title cannot be empty")
-    new_id = max(tasks.keys(), default=0)+1
-    tasks[new_id] = task.dict()
-    return {"id": new_id, **tasks[new_id]}
+    return storage.create_task(title, task.done)
+
 
 @app.put("/tasks/{task_id}")
 def update_task(task_id: int, task: UpdateTask):
-    if task_id not in tasks:
-        raise HTTPException(status_code=404, detail="Task {task_id} not found")
-
-    if task.title is not None:
-        if not task.title.strip():
+    title = task.title
+    if title is not None:
+        title = title.strip()
+        if not title:
             raise HTTPException(status_code=400, detail="Title cannot be empty")
-        tasks[task_id]["title"] = task.title
+    updated = storage.update_task(task_id, title, task.done)
+    if updated is None:
+        raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
+    return updated
 
-    if task.done is not None:
-        tasks[task_id]["done"] = task.done
-    return tasks[task_id]
 
 @app.delete("/tasks/{task_id}", status_code=204)
 def delete_task(task_id: int):
-    if task_id not in tasks:
+    if not storage.delete_task(task_id):
         raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
-    del tasks[task_id]
     return Response(status_code=204)
