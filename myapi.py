@@ -3,7 +3,6 @@ from typing import Optional
 from pydantic import BaseModel
 import storage
 
-storage.init_db()
 app = FastAPI()
 
 
@@ -22,7 +21,7 @@ def index():
     return {
         "name": "Task API",
         "version": "2.0",
-        "storage": "SQLite",
+        "storage": "Postgres",
         "endpoints": ["/tasks", "/tasks/{id}"]
     }
 
