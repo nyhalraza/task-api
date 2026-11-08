@@ -88,6 +88,7 @@ docker-compose.yml   app + db, started together
 .env                 real values (gitignored, excluded from the image)
 ```
 
+
 ## Configuration
 
 - `.env` holds the real values. It is gitignored and excluded from the image by `.dockerignore`.
